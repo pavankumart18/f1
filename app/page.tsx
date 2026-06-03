@@ -17,6 +17,8 @@ import {
 } from "@/components/standings";
 import { SectionHeading } from "@/components/section-heading";
 import { Greeting } from "@/components/greeting";
+import { CarShowcase, type ShowcaseTeam } from "@/components/car-showcase";
+import { F1Car } from "@/components/f1-car";
 import type {
   DriverStanding,
   ConstructorStanding,
@@ -51,6 +53,22 @@ export default async function Home() {
   const fastest = lastRace?.Results?.find((r) => r.FastestLap?.rank === "1");
   const roundsDone = nextRound ? nextRound - 1 : schedule.length;
 
+  // Group drivers under their constructor for the car slideshow.
+  const teams: ShowcaseTeam[] = constructors.map((c) => ({
+    id: c.Constructor.constructorId,
+    name: teamName(c.Constructor.constructorId, c.Constructor.name),
+    color: teamColor(c.Constructor.constructorId),
+    drivers: drivers
+      .filter((d) =>
+        d.Constructors.some(
+          (x) => x.constructorId === c.Constructor.constructorId
+        )
+      )
+      .map((d) => `${d.Driver.givenName} ${d.Driver.familyName}`),
+    points: c.points,
+    position: c.position,
+  }));
+
   // Live ticker — every item is derived from real data, not invented.
   const ticker: string[] = [
     leader &&
@@ -74,8 +92,16 @@ export default async function Home() {
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         {/* Masthead */}
-        <section className="border-b border-rule-strong py-8 sm:py-10">
-          <div className="flex items-center justify-between">
+        <section className="relative overflow-hidden border-b border-rule-strong py-8 sm:py-10">
+          {/* car driving across the background */}
+          <div
+            className="drive-across pointer-events-none absolute bottom-2 left-0 w-40 opacity-[0.07] sm:w-56"
+            aria-hidden
+          >
+            <F1Car color="var(--ink)" spinning className="w-full" />
+          </div>
+
+          <div className="relative flex items-center justify-between">
             <p className="kicker">
               <Greeting /> Pit Wall
             </p>
@@ -83,15 +109,21 @@ export default async function Home() {
               {season} World Championship · Round {nextRound ?? schedule.length}
             </p>
           </div>
-          <h1 className="mt-3 font-display text-5xl font-semibold leading-[0.95] tracking-tight sm:text-7xl">
+          <h1 className="relative mt-3 font-display text-5xl font-semibold leading-[0.95] tracking-tight sm:text-7xl">
             The <span className="italic text-accent">Pit Wall</span>.
           </h1>
-          <p className="mt-3 max-w-2xl text-sm text-ink-soft sm:text-base">
+          <p className="relative mt-3 max-w-2xl text-sm text-ink-soft sm:text-base">
             Your editorial briefing for the {season} Formula 1 season — live
-            countdown, championship standings, the full calendar, and a stats
+            timing, championship standings, the full calendar, and a stats
             archive going back to 1950.
           </p>
         </section>
+      </div>
+
+      {/* The grid — car slideshow (full-bleed band) */}
+      {teams.length > 0 && <CarShowcase teams={teams} />}
+
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
 
         {/* Featured race + countdown */}
         {nextRace && (

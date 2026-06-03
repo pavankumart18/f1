@@ -122,7 +122,7 @@ export function HBars({
             </span>
             <Label
               href={r.href ?? "#"}
-              className="w-40 shrink-0 truncate font-display text-sm font-medium hover:text-accent"
+              className="w-24 shrink-0 truncate font-display text-sm font-medium hover:text-accent sm:w-44"
             >
               {r.label}
               {r.sub ? (

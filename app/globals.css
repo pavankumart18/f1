@@ -117,6 +117,43 @@ body {
   animation: pulse-dot 1.4s ease-in-out infinite;
 }
 
+/* F1 car motion ----------------------------------------------------------- */
+@keyframes wheel-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+.wheel-spin {
+  animation: wheel-spin 0.5s linear infinite;
+}
+
+@keyframes drive-across {
+  0% { transform: translateX(-40vw) translateY(0); }
+  50% { transform: translateX(45vw) translateY(-2px); }
+  100% { transform: translateX(130vw) translateY(0); }
+}
+.drive-across {
+  animation: drive-across 9s linear infinite;
+}
+
+@keyframes car-float {
+  0%, 100% { transform: translateY(0) rotate(-0.4deg); }
+  50% { transform: translateY(-7px) rotate(0.4deg); }
+}
+.car-float {
+  animation: car-float 3.5s ease-in-out infinite;
+}
+
+@keyframes speed-dash {
+  from { background-position: 0 0; }
+  to { background-position: -80px 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wheel-spin, .drive-across, .car-float, .animate-ticker, .live-dot {
+    animation: none !important;
+  }
+}
+
 ::selection {
   background: var(--accent);
   color: var(--accent-ink);
