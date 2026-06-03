@@ -232,6 +232,93 @@ export async function getSessionLaps(
   return m;
 }
 
+export interface PosByLap {
+  maxLap: number;
+  maxPos: number;
+  drivers: {
+    number: number;
+    acronym: string;
+    colour: string;
+    positions: (number | null)[]; // index = lap-1
+  }[];
+}
+
+// Position-by-lap ("spaghetti") data: each driver's track position at the start
+// of every lap, derived from position changes + per-lap timestamps.
+export async function getPositionByLap(
+  sessionKey: number
+): Promise<PosByLap | null> {
+  const [positions, laps, drivers] = await Promise.all([
+    safe(
+      j<{ driver_number: number; position: number; date: string }[]>(
+        `position?session_key=${sessionKey}`,
+        30
+      ),
+      []
+    ),
+    safe(
+      j<
+        { driver_number: number; lap_number: number; date_start: string | null }[]
+      >(`laps?session_key=${sessionKey}`, 30),
+      []
+    ),
+    safe(j<DriverRow[]>(`drivers?session_key=${sessionKey}`, 3600), []),
+  ]);
+  if (!positions.length || !laps.length) return null;
+
+  const driverMap = new Map(drivers.map((d) => [d.driver_number, d]));
+
+  const changes = new Map<number, { t: number; p: number }[]>();
+  for (const r of positions) {
+    const arr = changes.get(r.driver_number) ?? [];
+    arr.push({ t: new Date(r.date).getTime(), p: r.position });
+    changes.set(r.driver_number, arr);
+  }
+  for (const arr of changes.values()) arr.sort((a, b) => a.t - b.t);
+
+  const lapTimes = new Map<number, Map<number, number>>();
+  let maxLap = 0;
+  for (const l of laps) {
+    if (!l.date_start) continue;
+    maxLap = Math.max(maxLap, l.lap_number);
+    const m = lapTimes.get(l.driver_number) ?? new Map<number, number>();
+    m.set(l.lap_number, new Date(l.date_start).getTime());
+    lapTimes.set(l.driver_number, m);
+  }
+  if (maxLap < 2) return null;
+
+  const posAt = (arr: { t: number; p: number }[], t: number) => {
+    let p: number | null = null;
+    for (const c of arr) {
+      if (c.t <= t) p = c.p;
+      else break;
+    }
+    return p;
+  };
+
+  let maxPos = 0;
+  const out: PosByLap["drivers"] = [];
+  for (const [num, arr] of changes) {
+    const d = driverMap.get(num);
+    if (!d) continue;
+    const dl = lapTimes.get(num);
+    const positionsArr: (number | null)[] = [];
+    for (let lap = 1; lap <= maxLap; lap++) {
+      const t = dl?.get(lap);
+      const p = t != null ? posAt(arr, t) : null;
+      if (p) maxPos = Math.max(maxPos, p);
+      positionsArr.push(p);
+    }
+    out.push({
+      number: num,
+      acronym: d.name_acronym,
+      colour: `#${d.team_colour || "888888"}`,
+      positions: positionsArr,
+    });
+  }
+  return { maxLap, maxPos: maxPos || out.length, drivers: out };
+}
+
 export const COMPOUND_COLOR: Record<string, string> = {
   SOFT: "#E8002D",
   MEDIUM: "#F5C518",

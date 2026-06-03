@@ -2,13 +2,16 @@ import {
   getLatestSession,
   getLiveTiming,
   getSessionLaps,
+  getPositionByLap,
   COMPOUND_COLOR,
   type TimingRow,
   type LapPoint,
+  type PosByLap,
 } from "@/lib/f1/openf1";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { SectionHeading } from "@/components/section-heading";
 import { MultiLineChart } from "@/components/charts";
+import { PositionChart } from "@/components/position-chart";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Live Timing — The Pit Wall" };
@@ -31,10 +34,13 @@ export default async function LivePage() {
   const session = await getLatestSession();
   let rows: TimingRow[] = [];
   let lapsByDriver = new Map<number, LapPoint[]>();
+  let posByLap: PosByLap | null = null;
+  const isRace = session?.session_name === "Race";
   if (session) {
-    [rows, lapsByDriver] = await Promise.all([
+    [rows, lapsByDriver, posByLap] = await Promise.all([
       getLiveTiming(session),
       getSessionLaps(session.session_key),
+      isRace ? getPositionByLap(session.session_key) : Promise.resolve(null),
     ]);
   }
   const live = session ? isLive(session) : false;
@@ -190,6 +196,20 @@ export default async function LivePage() {
           <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint">
             Fastest lap shown: {fastest ? fmtLap(fastest) : "—"} · pit & safety-car
             laps hidden
+          </p>
+        </div>
+      )}
+
+      {/* Race progression — position by lap (the spaghetti chart) */}
+      {posByLap && posByLap.drivers.length > 1 && (
+        <div className="mt-10">
+          <SectionHeading
+            label="Race Progression"
+            title="Position by Lap"
+          />
+          <PositionChart data={posByLap} />
+          <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint">
+            Every driver&apos;s track position, lap by lap · {posByLap.maxLap} laps
           </p>
         </div>
       )}
