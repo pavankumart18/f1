@@ -9,7 +9,7 @@ export function FavouriteHighlighter() {
   const pathname = usePathname();
   useEffect(() => {
     const apply = () => {
-      let fav: { id: string } | null = null;
+      let fav: { id: string; code?: string } | null = null;
       try {
         fav = JSON.parse(localStorage.getItem("pitwall-fav") || "null");
       } catch {}
@@ -17,6 +17,12 @@ export function FavouriteHighlighter() {
         el.classList.toggle(
           "fav-row",
           !!fav && el.getAttribute("data-driver") === fav.id
+        );
+      });
+      document.querySelectorAll("[data-driver-code]").forEach((el) => {
+        el.classList.toggle(
+          "fav-row",
+          !!fav?.code && el.getAttribute("data-driver-code") === fav.code
         );
       });
     };

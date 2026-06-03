@@ -5,7 +5,15 @@ import { Star } from "lucide-react";
 
 const KEY = "pitwall-fav";
 
-export function FavouriteButton({ id, name }: { id: string; name: string }) {
+export function FavouriteButton({
+  id,
+  name,
+  code,
+}: {
+  id: string;
+  name: string;
+  code?: string;
+}) {
   const [fav, setFav] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -22,7 +30,7 @@ export function FavouriteButton({ id, name }: { id: string; name: string }) {
       localStorage.removeItem(KEY);
       setFav(false);
     } else {
-      localStorage.setItem(KEY, JSON.stringify({ id, name }));
+      localStorage.setItem(KEY, JSON.stringify({ id, name, code }));
       setFav(true);
     }
     window.dispatchEvent(new Event("pitwall-fav-change"));

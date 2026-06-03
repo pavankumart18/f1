@@ -1,13 +1,23 @@
 import {
   getLatestSession,
   getLiveTiming,
+  getSessionLaps,
   COMPOUND_COLOR,
+  type TimingRow,
+  type LapPoint,
 } from "@/lib/f1/openf1";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { SectionHeading } from "@/components/section-heading";
+import { MultiLineChart } from "@/components/charts";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Live Timing — The Pit Wall" };
+
+function fmtLap(s: number) {
+  const m = Math.floor(s / 60);
+  const sec = (s % 60).toFixed(3).padStart(6, "0");
+  return `${m}:${sec}`;
+}
 
 function isLive(s: { date_start: string; date_end: string }) {
   const now = Date.now();
@@ -19,8 +29,45 @@ function isLive(s: { date_start: string; date_end: string }) {
 
 export default async function LivePage() {
   const session = await getLatestSession();
-  const rows = session ? await getLiveTiming(session) : [];
+  let rows: TimingRow[] = [];
+  let lapsByDriver = new Map<number, LapPoint[]>();
+  if (session) {
+    [rows, lapsByDriver] = await Promise.all([
+      getLiveTiming(session),
+      getSessionLaps(session.session_key),
+    ]);
+  }
   const live = session ? isLive(session) : false;
+
+  // Pace chart — top 5 by position, lap times with pit/outliers stripped out.
+  const chosen = rows.slice(0, 5);
+  const allTimes = chosen.flatMap((r) =>
+    (lapsByDriver.get(r.number) ?? [])
+      .filter((l) => l.time && !l.pitOut)
+      .map((l) => l.time as number)
+  );
+  const fastest = allTimes.length ? Math.min(...allTimes) : 0;
+  const cap = fastest * 1.18; // hide safety-car / in-laps
+  const maxLap = Math.max(
+    1,
+    ...chosen.flatMap((r) => (lapsByDriver.get(r.number) ?? []).map((l) => l.lap))
+  );
+  const lapLabels = Array.from({ length: maxLap }, (_, i) => String(i + 1));
+  const paceSeries = chosen.map((r) => {
+    const byLap = new Map(
+      (lapsByDriver.get(r.number) ?? []).map((l) => [l.lap, l])
+    );
+    return {
+      name: r.acronym,
+      color: r.colour,
+      values: lapLabels.map((_, i) => {
+        const l = byLap.get(i + 1);
+        if (!l || !l.time || l.pitOut || l.time > cap) return null;
+        return l.time;
+      }),
+    };
+  });
+  const hasPace = allTimes.length > 5;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
@@ -72,6 +119,7 @@ export default async function LivePage() {
                 {rows.map((r) => (
                   <tr
                     key={r.number}
+                    data-driver-code={r.acronym}
                     className="border-b border-rule hover:bg-paper-raised"
                   >
                     <td className="py-2.5 pl-1">
@@ -124,6 +172,27 @@ export default async function LivePage() {
           </div>
         )}
       </div>
+
+      {/* Pace — lap times */}
+      {hasPace && (
+        <div className="mt-10">
+          <SectionHeading
+            label="The Pace · Top 5"
+            title="Lap Times"
+          />
+          <MultiLineChart
+            labels={lapLabels}
+            series={paceSeries}
+            height={240}
+            yMin={fastest * 0.995}
+            yMax={cap}
+          />
+          <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint">
+            Fastest lap shown: {fastest ? fmtLap(fastest) : "—"} · pit & safety-car
+            laps hidden
+          </p>
+        </div>
+      )}
     </div>
   );
 }

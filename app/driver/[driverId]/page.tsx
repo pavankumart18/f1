@@ -136,6 +136,7 @@ export default async function DriverPage({
             <FavouriteButton
               id={driverId}
               name={`${driver.givenName} ${driver.familyName}`}
+              code={driver.code}
             />
           </div>
         </div>

@@ -198,6 +198,40 @@ export async function getDriverGrid(): Promise<GridDriver[]> {
     }));
 }
 
+export interface LapPoint {
+  lap: number;
+  time: number | null;
+  pitOut: boolean;
+}
+
+// Lap times per driver_number for a session (for the pace chart).
+export async function getSessionLaps(
+  sessionKey: number
+): Promise<Map<number, LapPoint[]>> {
+  const rows = await safe(
+    j<
+      {
+        driver_number: number;
+        lap_number: number;
+        lap_duration: number | null;
+        is_pit_out_lap: boolean;
+      }[]
+    >(`laps?session_key=${sessionKey}`, 15),
+    []
+  );
+  const m = new Map<number, LapPoint[]>();
+  for (const r of rows) {
+    const arr = m.get(r.driver_number) ?? [];
+    arr.push({
+      lap: r.lap_number,
+      time: r.lap_duration ?? null,
+      pitOut: !!r.is_pit_out_lap,
+    });
+    m.set(r.driver_number, arr);
+  }
+  return m;
+}
+
 export const COMPOUND_COLOR: Record<string, string> = {
   SOFT: "#E8002D",
   MEDIUM: "#F5C518",

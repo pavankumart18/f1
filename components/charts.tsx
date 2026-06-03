@@ -68,21 +68,41 @@ export function MultiLineChart({
   labels,
   series,
   height = 200,
+  yMin,
+  yMax,
 }: {
   labels: string[];
-  series: { name: string; color: string; values: number[] }[];
+  series: { name: string; color: string; values: (number | null)[] }[];
   height?: number;
+  yMin?: number;
+  yMax?: number;
 }) {
   if (labels.length < 2) return null;
   const W = 1000;
   const H = height;
   const pad = 8;
-  const max = Math.max(...series.flatMap((s) => s.values), 1);
+  const all = series.flatMap((s) => s.values.filter((v): v is number => v != null));
+  const lo = yMin ?? Math.min(...all, 0);
+  const hi = yMax ?? Math.max(...all, 1);
   const x = (i: number) => (i / (labels.length - 1)) * (W - pad * 2) + pad;
-  const y = (v: number) => H - pad - (v / max) * (H - pad * 2);
+  const y = (v: number) =>
+    H - pad - ((v - lo) / (hi - lo || 1)) * (H - pad * 2);
   const ticks = labels.filter(
     (_, i) => i % Math.ceil(labels.length / 8) === 0 || i === labels.length - 1
   );
+
+  // build a path that lifts the pen over null gaps
+  const toPath = (vals: (number | null)[]) => {
+    let d = "";
+    let pen = false;
+    vals.forEach((v, i) => {
+      if (v == null) { pen = false; return; }
+      const cmd = pen ? "L" : "M";
+      d += `${cmd}${x(i).toFixed(1)} ${y(v).toFixed(1)} `;
+      pen = true;
+    });
+    return d.trim();
+  };
 
   return (
     <div>
@@ -98,13 +118,14 @@ export function MultiLineChart({
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" preserveAspectRatio="none" role="img">
         {series.map((s) => (
-          <polyline
+          <path
             key={s.name}
-            points={s.values.map((v, i) => `${x(i)},${y(v)}`).join(" ")}
+            d={toPath(s.values)}
             fill="none"
             stroke={s.color}
-            strokeWidth={3}
+            strokeWidth={2.5}
             strokeLinejoin="round"
+            strokeLinecap="round"
             vectorEffect="non-scaling-stroke"
           />
         ))}
