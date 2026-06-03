@@ -51,9 +51,14 @@ function Odometer({ value }: { value: number }) {
 
 export function Countdown({ target }: { target: string }) {
   const targetMs = new Date(target).getTime();
-  const [t, setT] = useState(() => diff(targetMs));
+  // Start at 0 on both server and first client render to avoid a hydration
+  // mismatch (Date.now() differs between the two). Fill in after mount.
+  const [t, setT] = useState({ done: false, days: 0, hours: 0, mins: 0, secs: 0 });
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+    setT(diff(targetMs));
     const id = setInterval(() => setT(diff(targetMs)), 1000);
     return () => clearInterval(id);
   }, [targetMs]);
@@ -65,7 +70,7 @@ export function Countdown({ target }: { target: string }) {
     { v: t.secs, l: "Sec" },
   ];
 
-  if (t.done) {
+  if (mounted && t.done) {
     return (
       <span className="font-mono text-sm uppercase tracking-[0.2em] text-accent live-dot">
         ● Lights Out

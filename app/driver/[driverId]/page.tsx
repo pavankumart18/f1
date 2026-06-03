@@ -6,7 +6,7 @@ import {
   getDriverCareer,
   getDriverSeasonResults,
 } from "@/lib/f1/api";
-import { getDriverProgression } from "@/lib/f1/archive";
+import { getDriverProgression, getDriverDossier } from "@/lib/f1/archive";
 import { getWikiImage } from "@/lib/f1/wiki";
 import { flag } from "@/lib/f1/flags";
 import { teamColor, teamName } from "@/lib/f1/teams";
@@ -14,6 +14,8 @@ import { StatTile } from "@/components/stat-tile";
 import { SectionHeading } from "@/components/section-heading";
 import { DriverTrack } from "@/components/driver-track";
 import { LineChart, VBars } from "@/components/charts";
+import { CareerTimeline } from "@/components/career-timeline";
+import { TyreDivider } from "@/components/tyre";
 import { DRIVER_SONGS } from "@/lib/f1/songs";
 
 export const revalidate = 86400;
@@ -43,11 +45,12 @@ export default async function DriverPage({
   params: Promise<{ driverId: string }>;
 }) {
   const { driverId } = await params;
-  const [driver, career, season, progression] = await Promise.all([
+  const [driver, career, season, progression, dossier] = await Promise.all([
     getDriver(driverId),
     getDriverCareer(driverId),
     getDriverSeasonResults(driverId, "current"),
     getDriverProgression(driverId),
+    getDriverDossier(driverId),
   ]);
 
   if (!driver) notFound();
@@ -128,6 +131,66 @@ export default async function DriverPage({
           <StatTile value={career.poles} label="Poles" />
           <StatTile value={career.starts} label="Starts" />
         </div>
+      )}
+
+      {/* The dossier — career story from the archive */}
+      {dossier && (
+        <>
+          <TyreDivider label="Career Dossier" />
+
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <StatTile value={`${dossier.totals.finishRate}%`} label="Finish Rate" accent />
+            <StatTile value={dossier.totals.dnf} label="DNFs" />
+            <StatTile value={dossier.seasons.length} label="Seasons" />
+            <StatTile value={dossier.teams.length} label="Teams" />
+          </div>
+
+          <div className="mt-10">
+            <SectionHeading
+              label="Season by Season"
+              title="Career Timeline"
+            />
+            <CareerTimeline seasons={dossier.seasons} />
+          </div>
+
+          <div className="mt-10 grid gap-8 md:grid-cols-2">
+            <div>
+              <SectionHeading label="The Highs" title="Milestones" />
+              <ol className="border-t border-rule-strong">
+                {dossier.milestones.map((m, i) => (
+                  <li
+                    key={`${m.kind}-${m.year}-${i}`}
+                    className="flex items-baseline gap-3 border-b border-rule py-2.5"
+                  >
+                    <span className="w-12 shrink-0 font-mono text-sm font-semibold tabular-nums text-accent">
+                      {m.year}
+                    </span>
+                    <span className="text-sm">{m.text}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+            <div>
+              <SectionHeading label="The Grind" title="Setbacks & Comebacks" />
+              {dossier.setbacks.length ? (
+                <ul className="space-y-3">
+                  {dossier.setbacks.map((s, i) => (
+                    <li
+                      key={i}
+                      className="border-l-2 border-accent pl-3 text-sm leading-snug text-ink"
+                    >
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-ink-soft">
+                  A steady climb — no major droughts on record.
+                </p>
+              )}
+            </div>
+          </div>
+        </>
       )}
 
       {/* Career trajectory */}

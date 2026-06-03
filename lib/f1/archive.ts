@@ -308,6 +308,201 @@ export async function getDriverTitles(driverId: string): Promise<number> {
   return r?.drivers.find((d) => d.id === driverId)?.titles ?? 0;
 }
 
+/* --------------------------------------------------- driver deep dossier -- */
+
+let allResultsCache: Map<string, Race[]> | null = null;
+async function loadAllResults(): Promise<Map<string, Race[]>> {
+  if (allResultsCache) return allResultsCache;
+  const files = (
+    await readdir(path.join(DATA, "results")).catch(() => [] as string[])
+  ).filter((f) => f.endsWith(".json"));
+  const m = new Map<string, Race[]>();
+  for (const f of files.sort()) {
+    const races = await readJSON<Race[]>(`results/${f}`);
+    if (races) m.set(f.replace(".json", ""), races);
+  }
+  allResultsCache = m;
+  return m;
+}
+
+export interface DossierSeason {
+  year: string;
+  team?: string;
+  teamLabel?: string;
+  races: number;
+  wins: number;
+  podiums: number;
+  dnf: number;
+  points: number;
+  position: number | null;
+  bestFinish: number | null;
+  avgFinish: number | null;
+}
+export interface Dossier {
+  debut?: { year: string; race: string };
+  firstWin?: { year: string; race: string };
+  teams: string[];
+  seasons: DossierSeason[];
+  totals: {
+    races: number;
+    wins: number;
+    podiums: number;
+    dnf: number;
+    finishRate: number;
+  };
+  milestones: { year: string; text: string; kind: string }[];
+  setbacks: string[];
+}
+
+const numeric = (s: string) => /^\d+$/.test(s);
+
+export async function getDriverDossier(
+  driverId: string
+): Promise<Dossier | null> {
+  const [results, standings] = await Promise.all([
+    loadAllResults(),
+    loadDriverStandings(),
+  ]);
+  if (!results.size) return null;
+
+  const seasons: DossierSeason[] = [];
+  const teams: string[] = [];
+  let debut: Dossier["debut"];
+  let firstWin: Dossier["firstWin"];
+
+  for (const year of [...results.keys()].sort()) {
+    const races = results.get(year)!;
+    const s: DossierSeason = {
+      year,
+      races: 0,
+      wins: 0,
+      podiums: 0,
+      dnf: 0,
+      points: 0,
+      position: null,
+      bestFinish: null,
+      avgFinish: null,
+    };
+    const finishes: number[] = [];
+    for (const race of races) {
+      const r = (race.Results ?? []).find(
+        (x) => x.Driver.driverId === driverId
+      );
+      if (!r) continue;
+      s.races++;
+      s.points += Number(r.points) || 0;
+      s.team = r.Constructor.constructorId;
+      s.teamLabel = r.Constructor.name;
+      if (!teams.includes(s.team)) teams.push(s.team);
+      if (!debut) debut = { year, race: race.raceName };
+      if (r.positionText === "1") {
+        s.wins++;
+        if (!firstWin) firstWin = { year, race: race.raceName };
+      }
+      if (numeric(r.positionText)) {
+        const p = Number(r.positionText);
+        if (p <= 3) s.podiums++;
+        finishes.push(p);
+        if (s.bestFinish === null || p < s.bestFinish) s.bestFinish = p;
+      }
+      if (r.status !== "Finished" && !/^\+\d+ Lap/.test(r.status)) s.dnf++;
+    }
+    if (s.races === 0) continue;
+    s.avgFinish = finishes.length
+      ? Math.round((finishes.reduce((a, b) => a + b, 0) / finishes.length) * 10) / 10
+      : null;
+    const st = standings.get(year)?.find((x) => x.Driver.driverId === driverId);
+    s.position = st ? Number(st.position) : null;
+    seasons.push(s);
+  }
+
+  if (!seasons.length) return null;
+
+  const totals = seasons.reduce(
+    (a, s) => ({
+      races: a.races + s.races,
+      wins: a.wins + s.wins,
+      podiums: a.podiums + s.podiums,
+      dnf: a.dnf + s.dnf,
+    }),
+    { races: 0, wins: 0, podiums: 0, dnf: 0 }
+  );
+  const finishRate = totals.races
+    ? Math.round(((totals.races - totals.dnf) / totals.races) * 100)
+    : 0;
+
+  // milestones
+  const milestones: Dossier["milestones"] = [];
+  if (debut) milestones.push({ year: debut.year, text: `Debut · ${debut.race}`, kind: "debut" });
+  if (firstWin)
+    milestones.push({ year: firstWin.year, text: `First win · ${firstWin.race}`, kind: "win" });
+  for (const s of seasons)
+    if (s.position === 1)
+      milestones.push({ year: s.year, text: `World Champion`, kind: "title" });
+
+  // setbacks & comebacks — auto-derived
+  const setbacks: string[] = [];
+
+  // longest winless streak among racing seasons (after debut)
+  let streak = 0;
+  let maxStreak = 0;
+  let streakStart = "";
+  let bestStreakRange = "";
+  for (const s of seasons) {
+    if (s.wins === 0) {
+      if (streak === 0) streakStart = s.year;
+      streak++;
+      if (streak > maxStreak) {
+        maxStreak = streak;
+        bestStreakRange = `${streakStart}–${s.year}`;
+      }
+    } else {
+      streak = 0;
+    }
+  }
+  if (maxStreak >= 3 && totals.wins > 0)
+    setbacks.push(
+      `Weathered a ${maxStreak}-season win drought (${bestStreakRange}) before returning to the top step.`
+    );
+
+  // worst reliability season
+  const worstDnf = [...seasons].sort((a, b) => b.dnf - a.dnf)[0];
+  if (worstDnf && worstDnf.dnf >= 4)
+    setbacks.push(
+      `Retired from ${worstDnf.dnf} of ${worstDnf.races} races in ${worstDnf.year} — his toughest run for reliability.`
+    );
+
+  // pointless seasons after debut
+  const zero = seasons.filter((s) => s.points === 0);
+  if (zero.length >= 1 && totals.wins > 0)
+    setbacks.push(
+      `Endured ${zero.length === 1 ? "a winless, point-less campaign" : `${zero.length} point-less campaigns`} (${zero.map((z) => z.year).join(", ")}) early on.`
+    );
+
+  // biggest championship comeback (position improvement year-on-year)
+  let bestJump = 0;
+  let jumpText = "";
+  for (let i = 1; i < seasons.length; i++) {
+    const prev = seasons[i - 1].position;
+    const cur = seasons[i].position;
+    if (prev && cur && prev - cur > bestJump) {
+      bestJump = prev - cur;
+      jumpText = `Surged from P${prev} (${seasons[i - 1].year}) to P${cur} (${seasons[i].year}) in the championship — a ${bestJump}-place leap.`;
+    }
+  }
+  if (bestJump >= 3) setbacks.push(jumpText);
+
+  return {
+    debut,
+    firstWin,
+    teams,
+    seasons,
+    totals: { ...totals, finishRate },
+    milestones,
+    setbacks,
+  };
+}
+
 export interface SeasonPoint {
   year: string;
   points: number;
