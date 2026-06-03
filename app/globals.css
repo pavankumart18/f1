@@ -176,7 +176,7 @@ body {
   0% { opacity: 0; transform: translateY(30px); filter: blur(6px); }
   100% { opacity: 1; transform: translateY(0); filter: blur(0); }
 }
-.intro-approach { animation: approach 1.2s cubic-bezier(0.5, 0, 0.75, 0) forwards; }
+.intro-approach { animation: approach 2.4s cubic-bezier(0.5, 0, 0.75, 0) forwards; }
 .intro-name { animation: name-slam 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .intro-panel { animation: panel-wipe 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .intro-headshot { animation: headshot-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }

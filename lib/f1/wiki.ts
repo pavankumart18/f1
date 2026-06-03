@@ -20,9 +20,10 @@ export async function getWikiImage(
     );
     if (!res.ok) return null;
     const data = await res.json();
-    return (
-      data?.thumbnail?.source ?? data?.originalimage?.source ?? null
-    );
+    const thumb: string | undefined = data?.thumbnail?.source;
+    // Wikimedia thumb URLs embed the width (e.g. /330px-Name.jpg); request 640.
+    if (thumb) return thumb.replace(/\/\d+px-/, "/640px-");
+    return data?.originalimage?.source ?? null;
   } catch {
     return null;
   }

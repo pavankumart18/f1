@@ -8,6 +8,7 @@ import {
 } from "@/lib/f1/api";
 import { getDriverProgression, getDriverDossier } from "@/lib/f1/archive";
 import { getWikiImage } from "@/lib/f1/wiki";
+import { getDriverGrid, headshotRes } from "@/lib/f1/openf1";
 import { flag } from "@/lib/f1/flags";
 import { teamColor, teamName } from "@/lib/f1/teams";
 import { StatTile } from "@/components/stat-tile";
@@ -56,7 +57,17 @@ export default async function DriverPage({
 
   if (!driver) notFound();
 
-  const photo = await getWikiImage(driver.url);
+  const [wikiPhoto, grid] = await Promise.all([
+    getWikiImage(driver.url),
+    getDriverGrid().catch(() => []),
+  ]);
+  // Prefer the (large) Wikipedia photo; fall back to the official F1 headshot
+  // for current drivers so there's always a clear image.
+  const gridFace = driver.code
+    ? grid.find((g) => g.acronym === driver.code)
+    : undefined;
+  const photo =
+    wikiPhoto ?? (gridFace ? headshotRes(gridFace.headshot, "4col") : null);
   const song = DRIVER_SONGS[driverId];
 
   const currentTeam =
@@ -82,7 +93,8 @@ export default async function DriverPage({
               src={photo}
               alt={`${driver.givenName} ${driver.familyName}`}
               fill
-              sizes="144px"
+              sizes="(min-width: 640px) 144px, 96px"
+              quality={90}
               className="object-cover object-top"
             />
           </div>

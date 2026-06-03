@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { DriverStanding, ConstructorStanding } from "@/lib/f1/types";
 import { teamColor, teamName } from "@/lib/f1/teams";
 import { flag } from "@/lib/f1/flags";
+import { headshotRes } from "@/lib/f1/openf1";
 
 function PosBadge({ pos }: { pos: string }) {
   const n = Number(pos);
@@ -64,7 +65,7 @@ export function DriverStandingsTable({
                   {face ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={face}
+                      src={headshotRes(face, "2col-retina")}
                       alt=""
                       className="size-7 shrink-0 rounded-full object-cover object-top"
                       style={{ background: `${teamColor(c?.constructorId)}22` }}

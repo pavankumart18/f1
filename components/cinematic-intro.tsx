@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Play, FastForward } from "lucide-react";
 import { F1Car } from "./f1-car";
-import type { GridDriver } from "@/lib/f1/openf1";
+import { headshotRes, type GridDriver } from "@/lib/f1/openf1";
 
 type Phase = "idle" | "gate" | "lights" | "race" | "parade" | "title" | "done";
 
@@ -33,18 +33,28 @@ export function CinematicIntro({
     return () => window.removeEventListener("pitwall-play-intro", replay);
   }, []);
 
-  // Timeline state machine.
+  // Preload all headshots the moment the show starts so the parade is crisp
+  // and never shows a blank frame.
+  useEffect(() => {
+    if (phase !== "lights") return;
+    drivers.forEach((d) => {
+      const im = new window.Image();
+      im.src = headshotRes(d.headshot, "3col-retina");
+    });
+  }, [phase, drivers]);
+
+  // Timeline state machine — deliberately slow so each driver gets a moment.
   useEffect(() => {
     if (phase === "lights") {
       const t: ReturnType<typeof setTimeout>[] = [];
-      for (let i = 1; i <= 5; i++) t.push(setTimeout(() => setLit(i), i * 240));
-      t.push(setTimeout(() => { setLit(0); setPhase("race"); }, 1550));
+      for (let i = 1; i <= 5; i++) t.push(setTimeout(() => setLit(i), i * 380));
+      t.push(setTimeout(() => { setLit(0); setPhase("race"); }, 2500));
       return () => t.forEach(clearTimeout);
     }
     if (phase === "race") {
       const id = setTimeout(
         () => { setPi(0); setPhase(drivers.length ? "parade" : "title"); },
-        2500
+        4200
       );
       return () => clearTimeout(id);
     }
@@ -53,19 +63,19 @@ export function CinematicIntro({
         setPi((p) => {
           if (p + 1 >= drivers.length) {
             clearInterval(id);
-            setTimeout(() => setPhase("title"), 360);
+            setTimeout(() => setPhase("title"), 1100);
             return p;
           }
           return p + 1;
         });
-      }, 340);
+      }, 1100);
       return () => clearInterval(id);
     }
     if (phase === "title") {
-      const id = setTimeout(finish, 2400);
+      const id = setTimeout(finish, 3400);
       return () => clearTimeout(id);
     }
-  }, [phase, drivers.length]);
+  }, [phase, drivers.length, drivers]);
 
   function finish() {
     try { localStorage.setItem(SEEN, "1"); } catch {}
@@ -209,14 +219,30 @@ export function CinematicIntro({
               {driver.name} · #{driver.number}
             </div>
           </div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <div
             key={`face-${pi}`}
-            src={driver.headshot}
-            alt={driver.name}
-            className="intro-headshot h-64 w-52 shrink-0 object-cover object-top sm:h-80 sm:w-64"
-            style={{ borderBottom: `6px solid ${driver.colour}` }}
-          />
+            className="intro-headshot relative h-64 w-52 shrink-0 overflow-hidden sm:h-80 sm:w-64"
+            style={{
+              borderBottom: `6px solid ${driver.colour}`,
+              background: `${driver.colour}22`,
+            }}
+          >
+            <span
+              className="absolute inset-0 flex items-center justify-center font-display text-6xl font-bold opacity-60"
+              style={{ color: driver.colour }}
+            >
+              {driver.acronym}
+            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={headshotRes(driver.headshot, "3col-retina")}
+              alt={driver.name}
+              className="absolute inset-0 h-full w-full object-cover object-top"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = "none";
+              }}
+            />
+          </div>
         </div>
       )}
 

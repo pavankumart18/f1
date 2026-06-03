@@ -155,6 +155,13 @@ export async function getLiveTiming(
   return rows;
 }
 
+// Bump an F1 media headshot to a sharper resolution variant.
+// (OpenF1 returns the small `1col` transform by default.)
+export function headshotRes(url: string, variant = "3col-retina"): string {
+  if (!url) return url;
+  return url.replace(/transform\/[^/]+\/image\.png/, `transform/${variant}/image.png`);
+}
+
 export interface GridDriver {
   number: number;
   acronym: string;
