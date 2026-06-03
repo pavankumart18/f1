@@ -155,6 +155,42 @@ export async function getLiveTiming(
   return rows;
 }
 
+export interface GridDriver {
+  number: number;
+  acronym: string;
+  name: string;
+  last: string;
+  team: string;
+  colour: string;
+  headshot: string;
+}
+
+// Current grid with official headshots + team colours (for the intro & faces).
+export async function getDriverGrid(): Promise<GridDriver[]> {
+  const session = await getLatestSession();
+  if (!session) return [];
+  const rows = await safe(
+    j<
+      (DriverRow & {
+        headshot_url?: string;
+        last_name?: string;
+      })[]
+    >(`drivers?session_key=${session.session_key}`, 3600),
+    []
+  );
+  return rows
+    .filter((d) => !!d.headshot_url)
+    .map((d) => ({
+      number: d.driver_number,
+      acronym: d.name_acronym,
+      name: d.full_name,
+      last: d.last_name ?? d.full_name.split(" ").at(-1) ?? d.name_acronym,
+      team: d.team_name,
+      colour: `#${d.team_colour || "888888"}`,
+      headshot: d.headshot_url as string,
+    }));
+}
+
 export const COMPOUND_COLOR: Record<string, string> = {
   SOFT: "#E8002D",
   MEDIUM: "#F5C518",

@@ -148,10 +148,52 @@ body {
   to { background-position: -80px 0; }
 }
 
+/* Cinematic intro -------------------------------------------------------- */
+@keyframes approach {
+  0% { transform: translateX(-60vw) scale(0.15); opacity: 0; }
+  35% { opacity: 1; }
+  100% { transform: translateX(20vw) scale(2.6); opacity: 0; }
+}
+@keyframes name-slam {
+  0% { opacity: 0; transform: translateY(40px) scale(1.15); letter-spacing: 0.3em; }
+  60% { opacity: 1; transform: translateY(0) scale(1); letter-spacing: normal; }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes panel-wipe {
+  0% { transform: translateX(-101%); }
+  100% { transform: translateX(0); }
+}
+@keyframes headshot-in {
+  0% { opacity: 0; transform: translateX(40px) scale(0.9); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes streak {
+  0% { transform: translateX(-100%); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateX(120vw); opacity: 0; }
+}
+@keyframes title-rise {
+  0% { opacity: 0; transform: translateY(30px); filter: blur(6px); }
+  100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.intro-approach { animation: approach 1.2s cubic-bezier(0.5, 0, 0.75, 0) forwards; }
+.intro-name { animation: name-slam 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.intro-panel { animation: panel-wipe 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.intro-headshot { animation: headshot-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.intro-streak { animation: streak 0.9s linear infinite; }
+.intro-title { animation: title-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
 @media (prefers-reduced-motion: reduce) {
-  .wheel-spin, .drive-across, .car-float, .animate-ticker, .live-dot {
+  .wheel-spin, .drive-across, .car-float, .animate-ticker, .live-dot,
+  .intro-approach, .intro-streak {
     animation: none !important;
   }
+}
+
+/* Favourite-driver row highlight (applied client-side) */
+tr.fav-row {
+  background: var(--paper-raised);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 ::selection {

@@ -1,4 +1,5 @@
 import { getDriverStandings, getConstructorStandings } from "@/lib/f1/api";
+import { getDriverGrid } from "@/lib/f1/openf1";
 import {
   DriverStandingsTable,
   ConstructorStandingsTable,
@@ -10,10 +11,12 @@ export const revalidate = 1800;
 export const metadata = { title: "Standings — The Pit Wall" };
 
 export default async function StandingsPage() {
-  const [drivers, constructors] = await Promise.all([
+  const [drivers, constructors, grid] = await Promise.all([
     getDriverStandings("current").catch(() => []),
     getConstructorStandings("current").catch(() => []),
+    getDriverGrid().catch(() => []),
   ]);
+  const faces = Object.fromEntries(grid.map((d) => [d.acronym, d.headshot]));
   const season = drivers[0]
     ? "Current"
     : new Date().getFullYear().toString();
@@ -27,7 +30,7 @@ export default async function StandingsPage() {
       <div className="grid gap-10 lg:grid-cols-2">
         <div>
           <SectionHeading label="The Title Race" title="Drivers" />
-          <DriverStandingsTable standings={drivers} />
+          <DriverStandingsTable standings={drivers} faces={faces} />
         </div>
         <div>
           <SectionHeading label="The Cup" title="Constructors" />

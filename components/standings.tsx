@@ -17,9 +17,11 @@ function PosBadge({ pos }: { pos: string }) {
 export function DriverStandingsTable({
   standings,
   limit,
+  faces,
 }: {
   standings: DriverStanding[];
   limit?: number;
+  faces?: Record<string, string>;
 }) {
   const rows = limit ? standings.slice(0, limit) : standings;
   return (
@@ -38,9 +40,11 @@ export function DriverStandingsTable({
       <tbody>
         {rows.map((s) => {
           const c = s.Constructors[s.Constructors.length - 1];
+          const face = s.Driver.code ? faces?.[s.Driver.code] : undefined;
           return (
             <tr
               key={s.Driver.driverId}
+              data-driver={s.Driver.driverId}
               className="group border-b border-rule transition-colors hover:bg-paper-raised"
             >
               <td className="py-2.5 pl-1">
@@ -57,7 +61,17 @@ export function DriverStandingsTable({
                   href={`/driver/${s.Driver.driverId}`}
                   className="flex items-center gap-2 group-hover:text-accent"
                 >
-                  <span className="text-sm">{flag(s.Driver.nationality)}</span>
+                  {face ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={face}
+                      alt=""
+                      className="size-7 shrink-0 rounded-full object-cover object-top"
+                      style={{ background: `${teamColor(c?.constructorId)}22` }}
+                    />
+                  ) : (
+                    <span className="text-sm">{flag(s.Driver.nationality)}</span>
+                  )}
                   <span className="font-display text-[15px] font-medium leading-tight">
                     {s.Driver.givenName}{" "}
                     <span className="font-semibold">{s.Driver.familyName}</span>

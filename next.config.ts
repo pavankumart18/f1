@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "upload.wikimedia.org" },
+      { protocol: "https", hostname: "media.formula1.com" },
     ],
   },
   // Disable the Next 16 dev-tools overlay. Its "Segment Explorer" has a bug that

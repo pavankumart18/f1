@@ -6,6 +6,8 @@ import {
   getConstructorStandings,
   getLastResults,
 } from "@/lib/f1/api";
+import { getDriverGrid } from "@/lib/f1/openf1";
+import { CinematicIntro } from "@/components/cinematic-intro";
 import { teamName, teamColor } from "@/lib/f1/teams";
 import { flag } from "@/lib/f1/flags";
 import { Countdown } from "@/components/countdown";
@@ -35,13 +37,14 @@ function raceStart(race: { date: string; time?: string }) {
 }
 
 export default async function Home() {
-  const [schedule, nextRace, drivers, constructors, lastRace] =
+  const [schedule, nextRace, drivers, constructors, lastRace, grid] =
     await Promise.all([
       getSeasonSchedule("current").catch(() => []),
       getNextRace(),
       getDriverStandings("current").catch(() => []),
       getConstructorStandings("current").catch(() => []),
       getLastResults(),
+      getDriverGrid().catch(() => []),
     ]);
 
   const season = schedule[0]?.season ?? new Date().getFullYear().toString();
@@ -90,6 +93,7 @@ export default async function Home() {
 
   return (
     <div>
+      <CinematicIntro drivers={grid} songId="VJxppgsHjF8" />
       <Ticker items={ticker} />
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -201,7 +205,11 @@ export default async function Home() {
               title="Drivers"
               href="/standings"
             />
-            <DriverStandingsTable standings={drivers} limit={10} />
+            <DriverStandingsTable
+              standings={drivers}
+              limit={10}
+              faces={Object.fromEntries(grid.map((d) => [d.acronym, d.headshot]))}
+            />
           </div>
           <div>
             <SectionHeading

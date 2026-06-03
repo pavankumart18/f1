@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { MusicProvider } from "@/components/music-provider";
 import { LightsOut } from "@/components/lights-out";
+import { FavouriteHighlighter } from "@/components/favourite-highlighter";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
@@ -48,6 +49,7 @@ export default function RootLayout({
         >
           <MusicProvider>
             <LightsOut />
+            <FavouriteHighlighter />
             <SiteHeader />
             <main className="flex-1">{children}</main>
             <SiteFooter />
