@@ -5,6 +5,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { MusicProvider } from "@/components/music-provider";
 import { LightsOut } from "@/components/lights-out";
 import { FavouriteHighlighter } from "@/components/favourite-highlighter";
+import { BottomNav } from "@/components/bottom-nav";
+import { PullToRefresh } from "@/components/pull-to-refresh";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
@@ -40,7 +42,7 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${fraunces.variable} ${inter.variable} ${geistMono.variable} h-full`}
     >
-      <body className="min-h-full flex flex-col bg-paper text-ink">
+      <body className="min-h-full flex flex-col bg-paper text-ink pb-14 md:pb-0">
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
@@ -50,9 +52,11 @@ export default function RootLayout({
           <MusicProvider>
             <LightsOut />
             <FavouriteHighlighter />
+            <PullToRefresh />
             <SiteHeader />
             <main className="flex-1">{children}</main>
             <SiteFooter />
+            <BottomNav />
           </MusicProvider>
         </ThemeProvider>
       </body>

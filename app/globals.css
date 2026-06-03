@@ -205,7 +205,15 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Thin scrollbar for the calendar strip */
+/* Thin scrollbar + momentum scrolling for horizontal strips */
+.thin-scroll {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
 .thin-scroll::-webkit-scrollbar { height: 6px; }
 .thin-scroll::-webkit-scrollbar-thumb { background: var(--rule-strong); border-radius: 999px; }
 .thin-scroll::-webkit-scrollbar-track { background: transparent; }
+
+/* Scroll-snap for swipeable card strips */
+.snap-strip { scroll-snap-type: x mandatory; }
+.snap-strip > * { scroll-snap-align: start; }

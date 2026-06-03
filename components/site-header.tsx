@@ -9,7 +9,7 @@ const NAV = [
   { href: "/schedule", label: "Schedule" },
   { href: "/records", label: "Records" },
   { href: "/circuits", label: "Circuits" },
-  { href: "/garage", label: "Garage" },
+  // { href: "/garage", label: "Garage" }, // hidden for now — WIP
   { href: "/analysis", label: "Analysis" },
   { href: "/compare", label: "Compare" },
   { href: "/archive", label: "Archive" },
@@ -50,13 +50,13 @@ export function SiteHeader() {
         </div>
       </div>
 
-      {/* mobile nav */}
-      <nav className="flex items-center justify-center gap-5 border-t border-rule px-4 py-1.5 md:hidden">
+      {/* mobile nav — horizontally scrollable secondary strip (primary lives in the bottom tab bar) */}
+      <nav className="thin-scroll flex items-center gap-5 overflow-x-auto border-t border-rule px-4 py-1.5 md:hidden">
         {NAV.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-soft hover:text-accent transition-colors"
+            className="shrink-0 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-soft hover:text-accent transition-colors"
           >
             {item.label}
           </Link>

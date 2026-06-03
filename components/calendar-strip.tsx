@@ -22,7 +22,7 @@ export function CalendarStrip({
   season: string;
 }) {
   return (
-    <div className="thin-scroll -mx-1 flex gap-2 overflow-x-auto px-1 pb-3">
+    <div className="thin-scroll snap-strip -mx-1 flex gap-2 overflow-x-auto px-1 pb-3">
       {races.map((race) => {
         const round = Number(race.round);
         const isNext = nextRound === round;
