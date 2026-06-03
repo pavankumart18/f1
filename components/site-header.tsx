@@ -4,9 +4,11 @@ import { MusicToggle } from "./music-toggle";
 
 const NAV = [
   { href: "/", label: "Dashboard" },
+  { href: "/live", label: "Live" },
   { href: "/standings", label: "Standings" },
   { href: "/schedule", label: "Schedule" },
   { href: "/records", label: "Records" },
+  { href: "/analysis", label: "Analysis" },
   { href: "/compare", label: "Compare" },
   { href: "/archive", label: "Archive" },
 ];
