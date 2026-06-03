@@ -62,13 +62,16 @@ export function MusicProvider({ children }: { children: React.ReactNode }) {
 function NowPlaying({ track, onClose }: { track: Song; onClose: () => void }) {
   return (
     <>
-      {/* Hidden audio source — plays only when a real YouTube id is provided. */}
+      {/* Hidden audio source — plays only when a real YouTube id is provided.
+          key forces a fresh iframe on every track change so the new song
+          actually loads + autoplays (patching src alone doesn't reliably switch). */}
       {track.youtubeId && (
         <iframe
+          key={track.youtubeId}
           title="music"
           aria-hidden
           className="pointer-events-none fixed -left-[9999px] h-px w-px"
-          allow="autoplay"
+          allow="autoplay; encrypted-media"
           src={`https://www.youtube.com/embed/${track.youtubeId}?autoplay=1&loop=1&playlist=${track.youtubeId}&controls=0`}
         />
       )}

@@ -80,7 +80,13 @@ export default async function RacePage({
             {meta.raceName}
           </h1>
           <p className="mt-2 text-sm text-ink-soft">
-            {meta.Circuit.circuitName} · {meta.Circuit.Location.locality}
+            <Link
+              href={`/circuit/${meta.Circuit.circuitId}`}
+              className="underline decoration-rule underline-offset-2 hover:text-accent hover:decoration-accent"
+            >
+              {meta.Circuit.circuitName}
+            </Link>{" "}
+            · {meta.Circuit.Location.locality}
           </p>
         </div>
         <div className="flex items-center gap-5">

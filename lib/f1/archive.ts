@@ -173,6 +173,133 @@ export async function computeRecords(): Promise<Records | null> {
   return cache;
 }
 
+/* ----------------------------------------------------- circuits / venues -- */
+
+export interface CircuitWinner {
+  id: string;
+  name: string;
+  nationality?: string;
+  team?: string;
+  wins: number;
+}
+export interface CircuitStat {
+  id: string;
+  name: string;
+  locality: string;
+  country: string;
+  lat: string;
+  long: string;
+  grands_prix: number;
+  firstYear: string;
+  lastYear: string;
+  topDrivers: CircuitWinner[];
+  topConstructors: CircuitWinner[];
+  rollOfHonour: { year: string; round: string; driver: string; driverId: string; team?: string }[];
+}
+
+let circuitCache: Map<string, CircuitStat> | null = null;
+
+async function buildCircuits(): Promise<Map<string, CircuitStat>> {
+  if (circuitCache) return circuitCache;
+  const files = (
+    await readdir(path.join(DATA, "results")).catch(() => [] as string[])
+  ).filter((f) => f.endsWith(".json"));
+
+  type Acc = {
+    stat: CircuitStat;
+    drivers: Map<string, CircuitWinner>;
+    constructors: Map<string, CircuitWinner>;
+  };
+  const acc = new Map<string, Acc>();
+
+  for (const file of files.sort()) {
+    const year = file.replace(".json", "");
+    const races = (await readJSON<Race[]>(`results/${file}`)) ?? [];
+    for (const race of races) {
+      const c = race.Circuit;
+      const winner = (race.Results ?? []).find((r) => r.position === "1");
+      let a = acc.get(c.circuitId);
+      if (!a) {
+        a = {
+          stat: {
+            id: c.circuitId,
+            name: c.circuitName,
+            locality: c.Location.locality,
+            country: c.Location.country,
+            lat: c.Location.lat,
+            long: c.Location.long,
+            grands_prix: 0,
+            firstYear: year,
+            lastYear: year,
+            topDrivers: [],
+            topConstructors: [],
+            rollOfHonour: [],
+          },
+          drivers: new Map(),
+          constructors: new Map(),
+        };
+        acc.set(c.circuitId, a);
+      }
+      a.stat.grands_prix++;
+      if (year < a.stat.firstYear) a.stat.firstYear = year;
+      if (year > a.stat.lastYear) a.stat.lastYear = year;
+      if (winner) {
+        const dId = winner.Driver.driverId;
+        const d = a.drivers.get(dId) ?? {
+          id: dId,
+          name: `${winner.Driver.givenName} ${winner.Driver.familyName}`,
+          nationality: winner.Driver.nationality,
+          team: winner.Constructor.constructorId,
+          wins: 0,
+        };
+        d.wins++;
+        a.drivers.set(dId, d);
+
+        const cId = winner.Constructor.constructorId;
+        const ct = a.constructors.get(cId) ?? {
+          id: cId,
+          name: winner.Constructor.name,
+          wins: 0,
+        };
+        ct.wins++;
+        a.constructors.set(cId, ct);
+
+        a.stat.rollOfHonour.push({
+          year,
+          round: race.round,
+          driver: `${winner.Driver.givenName} ${winner.Driver.familyName}`,
+          driverId: dId,
+          team: winner.Constructor.constructorId,
+        });
+      }
+    }
+  }
+
+  const out = new Map<string, CircuitStat>();
+  for (const [id, a] of acc) {
+    a.stat.topDrivers = [...a.drivers.values()]
+      .sort((x, y) => y.wins - x.wins)
+      .slice(0, 8);
+    a.stat.topConstructors = [...a.constructors.values()]
+      .sort((x, y) => y.wins - x.wins)
+      .slice(0, 8);
+    a.stat.rollOfHonour.reverse(); // newest first
+    out.set(id, a.stat);
+  }
+  circuitCache = out;
+  return out;
+}
+
+export async function listCircuits(): Promise<CircuitStat[]> {
+  const m = await buildCircuits();
+  return [...m.values()].sort((a, b) => b.grands_prix - a.grands_prix);
+}
+
+export async function getCircuitStat(id: string): Promise<CircuitStat | null> {
+  const m = await buildCircuits();
+  return m.get(id) ?? null;
+}
+
 // Career championship count for a driver, from the season-by-season archive.
 // (Jolpica's per-driver standings endpoint now requires a season filter, so the
 // archive is the reliable source for all-time title counts.)
