@@ -308,6 +308,46 @@ export async function getDriverTitles(driverId: string): Promise<number> {
   return r?.drivers.find((d) => d.id === driverId)?.titles ?? 0;
 }
 
+export interface SeasonPoint {
+  year: string;
+  points: number;
+  wins: number;
+  position: number;
+}
+
+let driverStandingsCache: Map<string, DriverStanding[]> | null = null;
+async function loadDriverStandings(): Promise<Map<string, DriverStanding[]>> {
+  if (driverStandingsCache) return driverStandingsCache;
+  const seasons = (await readJSON<string[]>("seasons.json")) ?? [];
+  const m = new Map<string, DriverStanding[]>();
+  for (const y of seasons) {
+    const s = await readJSON<DriverStanding[]>(`standings/drivers-${y}.json`);
+    if (s) m.set(y, s);
+  }
+  driverStandingsCache = m;
+  return m;
+}
+
+// A driver's season-by-season points / wins / final position from the archive.
+export async function getDriverProgression(
+  driverId: string
+): Promise<SeasonPoint[]> {
+  const m = await loadDriverStandings();
+  const out: SeasonPoint[] = [];
+  for (const year of [...m.keys()].sort()) {
+    const row = m.get(year)!.find((s) => s.Driver.driverId === driverId);
+    if (row) {
+      out.push({
+        year,
+        points: Number(row.points) || 0,
+        wins: Number(row.wins) || 0,
+        position: Number(row.position) || 0,
+      });
+    }
+  }
+  return out;
+}
+
 export type LeaderKey = keyof Pick<
   DriverRecord,
   "wins" | "podiums" | "poles" | "points" | "titles" | "fastestLaps" | "races"

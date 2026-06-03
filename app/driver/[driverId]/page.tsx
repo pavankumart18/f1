@@ -6,12 +6,14 @@ import {
   getDriverCareer,
   getDriverSeasonResults,
 } from "@/lib/f1/api";
+import { getDriverProgression } from "@/lib/f1/archive";
 import { getWikiImage } from "@/lib/f1/wiki";
 import { flag } from "@/lib/f1/flags";
 import { teamColor, teamName } from "@/lib/f1/teams";
 import { StatTile } from "@/components/stat-tile";
 import { SectionHeading } from "@/components/section-heading";
 import { DriverTrack } from "@/components/driver-track";
+import { LineChart, VBars } from "@/components/charts";
 import { DRIVER_SONGS } from "@/lib/f1/songs";
 
 export const revalidate = 86400;
@@ -41,10 +43,11 @@ export default async function DriverPage({
   params: Promise<{ driverId: string }>;
 }) {
   const { driverId } = await params;
-  const [driver, career, season] = await Promise.all([
+  const [driver, career, season, progression] = await Promise.all([
     getDriver(driverId),
     getDriverCareer(driverId),
     getDriverSeasonResults(driverId, "current"),
+    getDriverProgression(driverId),
   ]);
 
   if (!driver) notFound();
@@ -57,7 +60,10 @@ export default async function DriverPage({
   const accent = teamColor(currentTeam?.constructorId);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+    <div
+      className="mx-auto max-w-5xl px-4 py-8 sm:px-6"
+      style={{ "--accent": accent } as React.CSSProperties}
+    >
       <Link href="/standings" className="kicker hover:text-accent">
         ← Standings
       </Link>
@@ -121,6 +127,30 @@ export default async function DriverPage({
           <StatTile value={career.podiums} label="Podiums" />
           <StatTile value={career.poles} label="Poles" />
           <StatTile value={career.starts} label="Starts" />
+        </div>
+      )}
+
+      {/* Career trajectory */}
+      {progression.length > 1 && (
+        <div className="mt-10">
+          <SectionHeading
+            label="Career Trajectory"
+            title={`Points by Season · ${progression[0].year}–${progression.at(-1)!.year}`}
+          />
+          <LineChart
+            data={progression.map((p) => ({ label: p.year, value: p.points }))}
+            height={180}
+          />
+          {progression.some((p) => p.wins > 0) && (
+            <div className="mt-8">
+              <SectionHeading label="Race Wins" title="Wins by Season" />
+              <VBars
+                data={progression
+                  .filter((p) => p.wins > 0)
+                  .map((p) => ({ label: p.year, value: p.wins }))}
+              />
+            </div>
+          )}
         </div>
       )}
 

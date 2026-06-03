@@ -48,7 +48,10 @@ export default async function ConstructorPage({
   const accent = teamColor(constructorId);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+    <div
+      className="mx-auto max-w-5xl px-4 py-8 sm:px-6"
+      style={{ "--accent": accent } as React.CSSProperties}
+    >
       <Link href="/standings" className="kicker hover:text-accent">
         ← Standings
       </Link>

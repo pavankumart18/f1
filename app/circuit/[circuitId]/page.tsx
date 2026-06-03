@@ -33,9 +33,13 @@ export default async function CircuitPage({
   const track = await getCircuitTrack(c.lat, c.long);
   const king = c.topDrivers[0];
   const kingTeam = c.topConstructors[0];
+  const livery = teamColor(kingTeam?.id);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+    <div
+      className="mx-auto max-w-5xl px-4 py-8 sm:px-6"
+      style={{ "--accent": livery } as React.CSSProperties}
+    >
       <Link href="/circuits" className="kicker hover:text-accent">
         ← Circuits
       </Link>

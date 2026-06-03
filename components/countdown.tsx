@@ -14,15 +14,46 @@ function diff(target: number) {
   };
 }
 
-const pad = (n: number) => String(n).padStart(2, "0");
+// A single rolling reel showing digits 0–9, translated to the active digit.
+function Reel({ digit }: { digit: number }) {
+  return (
+    <span
+      className="relative inline-block overflow-hidden align-top"
+      style={{ height: "1em", width: "0.62em" }}
+    >
+      <span
+        className="absolute left-0 top-0 flex flex-col"
+        style={{
+          transform: `translateY(-${digit * 10}%)`,
+          transition: "transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)",
+        }}
+      >
+        {Array.from({ length: 10 }, (_, n) => (
+          <span key={n} className="block text-center" style={{ height: "1em" }}>
+            {n}
+          </span>
+        ))}
+      </span>
+    </span>
+  );
+}
+
+function Odometer({ value }: { value: number }) {
+  const tens = Math.floor(value / 10) % 10;
+  const units = value % 10;
+  return (
+    <span className="font-mono text-2xl font-semibold leading-none tabular-nums sm:text-3xl">
+      <Reel digit={tens} />
+      <Reel digit={units} />
+    </span>
+  );
+}
 
 export function Countdown({ target }: { target: string }) {
   const targetMs = new Date(target).getTime();
   const [t, setT] = useState(() => diff(targetMs));
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     const id = setInterval(() => setT(diff(targetMs)), 1000);
     return () => clearInterval(id);
   }, [targetMs]);
@@ -47,17 +78,13 @@ export function Countdown({ target }: { target: string }) {
       {cells.map((c, i) => (
         <div key={c.l} className="flex items-stretch gap-1.5">
           <div className="flex min-w-[3.25rem] flex-col items-center justify-center bg-ink px-2 py-1.5 text-paper">
-            <span className="font-mono text-2xl font-semibold tabular-nums leading-none sm:text-3xl">
-              {mounted ? pad(c.v) : "--"}
-            </span>
+            <Odometer value={c.v} />
             <span className="mt-1 font-mono text-[9px] uppercase tracking-[0.18em] text-paper/60">
               {c.l}
             </span>
           </div>
           {i < cells.length - 1 && (
-            <span className="self-center font-mono text-xl text-ink-faint">
-              :
-            </span>
+            <span className="self-center font-mono text-xl text-ink-faint">:</span>
           )}
         </div>
       ))}
