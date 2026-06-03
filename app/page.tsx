@@ -169,12 +169,20 @@ export default async function Home() {
                 {nextRace.Circuit.circuitName} ·{" "}
                 {nextRace.Circuit.Location.locality}
               </p>
-              <Link
-                href={`/race/${season}/${nextRace.round}`}
-                className="mt-4 inline-flex items-center gap-1.5 border border-rule-strong px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] hover:bg-ink hover:text-paper transition-colors"
-              >
-                Race weekend details →
-              </Link>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link
+                  href={`/race/${season}/${nextRace.round}`}
+                  className="inline-flex items-center gap-1.5 border border-rule-strong px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] hover:bg-ink hover:text-paper transition-colors"
+                >
+                  Race weekend details →
+                </Link>
+                <Link
+                  href="/predict"
+                  className="inline-flex items-center gap-1.5 bg-accent px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-accent-ink hover:opacity-90 transition-opacity"
+                >
+                  Predict the podium →
+                </Link>
+              </div>
             </div>
             <div className="flex flex-col items-start gap-2 md:items-end">
               <span className="kicker">Countdown to lights out</span>
