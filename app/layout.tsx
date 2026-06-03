@@ -3,6 +3,7 @@ import { Fraunces, Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { MusicProvider } from "@/components/music-provider";
+import { LightsOut } from "@/components/lights-out";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
@@ -46,6 +47,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <MusicProvider>
+            <LightsOut />
             <SiteHeader />
             <main className="flex-1">{children}</main>
             <SiteFooter />

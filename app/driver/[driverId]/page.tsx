@@ -13,6 +13,7 @@ import { teamColor, teamName } from "@/lib/f1/teams";
 import { StatTile } from "@/components/stat-tile";
 import { SectionHeading } from "@/components/section-heading";
 import { DriverTrack } from "@/components/driver-track";
+import { FavouriteButton } from "@/components/favourite-button";
 import { LineChart, VBars } from "@/components/charts";
 import { CareerTimeline } from "@/components/career-timeline";
 import { TyreDivider } from "@/components/tyre";
@@ -119,6 +120,12 @@ export default async function DriverPage({
               accent={accent}
             />
           )}
+          <div>
+            <FavouriteButton
+              id={driverId}
+              name={`${driver.givenName} ${driver.familyName}`}
+            />
+          </div>
         </div>
       </div>
 

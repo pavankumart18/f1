@@ -63,6 +63,61 @@ export function LineChart({
   );
 }
 
+/* Multiple lines on a shared x-axis (e.g. two drivers' points by season). */
+export function MultiLineChart({
+  labels,
+  series,
+  height = 200,
+}: {
+  labels: string[];
+  series: { name: string; color: string; values: number[] }[];
+  height?: number;
+}) {
+  if (labels.length < 2) return null;
+  const W = 1000;
+  const H = height;
+  const pad = 8;
+  const max = Math.max(...series.flatMap((s) => s.values), 1);
+  const x = (i: number) => (i / (labels.length - 1)) * (W - pad * 2) + pad;
+  const y = (v: number) => H - pad - (v / max) * (H - pad * 2);
+  const ticks = labels.filter(
+    (_, i) => i % Math.ceil(labels.length / 8) === 0 || i === labels.length - 1
+  );
+
+  return (
+    <div>
+      <div className="mb-2 flex flex-wrap gap-4">
+        {series.map((s) => (
+          <span key={s.name} className="flex items-center gap-1.5">
+            <span className="h-2 w-4" style={{ background: s.color }} />
+            <span className="font-mono text-[11px] uppercase tracking-[0.1em]">
+              {s.name}
+            </span>
+          </span>
+        ))}
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" preserveAspectRatio="none" role="img">
+        {series.map((s) => (
+          <polyline
+            key={s.name}
+            points={s.values.map((v, i) => `${x(i)},${y(v)}`).join(" ")}
+            fill="none"
+            stroke={s.color}
+            strokeWidth={3}
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+          />
+        ))}
+      </svg>
+      <div className="mt-1 flex justify-between font-mono text-[10px] tabular-nums text-ink-faint">
+        {ticks.map((t) => (
+          <span key={t}>{t}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* Vertical bars (e.g. by decade). */
 export function VBars({
   data,

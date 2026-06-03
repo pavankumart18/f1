@@ -503,6 +503,46 @@ export async function getDriverDossier(
   };
 }
 
+export interface OnThisDay {
+  year: string;
+  raceName: string;
+  country: string;
+  winner: string;
+  winnerId: string;
+  team?: string;
+  season: string;
+  round: string;
+}
+
+// Races that took place on a given calendar day (MM-DD) across all history.
+export async function getOnThisDay(
+  month: number,
+  day: number
+): Promise<OnThisDay[]> {
+  const results = await loadAllResults();
+  const mm = String(month).padStart(2, "0");
+  const dd = String(day).padStart(2, "0");
+  const out: OnThisDay[] = [];
+  for (const [year, races] of results) {
+    for (const race of races) {
+      if (race.date?.slice(5) !== `${mm}-${dd}`) continue;
+      const w = (race.Results ?? []).find((r) => r.positionText === "1");
+      if (!w) continue;
+      out.push({
+        year,
+        raceName: race.raceName,
+        country: race.Circuit.Location.country,
+        winner: `${w.Driver.givenName} ${w.Driver.familyName}`,
+        winnerId: w.Driver.driverId,
+        team: w.Constructor.constructorId,
+        season: race.season,
+        round: race.round,
+      });
+    }
+  }
+  return out.sort((a, b) => Number(b.year) - Number(a.year));
+}
+
 export interface SeasonPoint {
   year: string;
   points: number;

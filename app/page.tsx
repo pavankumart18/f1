@@ -19,6 +19,8 @@ import { SectionHeading } from "@/components/section-heading";
 import { Greeting } from "@/components/greeting";
 import { CarShowcase, type ShowcaseTeam } from "@/components/car-showcase";
 import { F1Car } from "@/components/f1-car";
+import { OnThisDay } from "@/components/on-this-day";
+import { MyDriverCard } from "@/components/my-driver";
 import type {
   DriverStanding,
   ConstructorStanding,
@@ -103,7 +105,7 @@ export default async function Home() {
 
           <div className="relative flex items-center justify-between">
             <p className="kicker">
-              <Greeting /> Pit Wall
+              <Greeting />
             </p>
             <p className="kicker hidden sm:block">
               {season} World Championship · Round {nextRound ?? schedule.length}
@@ -124,6 +126,27 @@ export default async function Home() {
       {teams.length > 0 && <CarShowcase teams={teams} />}
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        {drivers.length > 0 && (
+          <div className="pt-6">
+            <MyDriverCard
+              drivers={drivers}
+              lastRace={
+                lastRace
+                  ? {
+                      name: lastRace.raceName,
+                      results: (lastRace.Results ?? []).map((r) => ({
+                        id: r.Driver.driverId,
+                        position: r.position,
+                        grid: r.grid,
+                        points: r.points,
+                        status: r.status,
+                      })),
+                    }
+                  : null
+              }
+            />
+          </div>
+        )}
 
         {/* Featured race + countdown */}
         {nextRace && (
@@ -199,6 +222,11 @@ export default async function Home() {
               fastest={fastest}
             />
           </div>
+        </section>
+
+        {/* On this day in F1 */}
+        <section className="border-t border-rule py-7">
+          <OnThisDay />
         </section>
       </div>
     </div>
