@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { getRaceResults, getSeasonSchedule } from "@/lib/f1/api";
 import { getCircuitTrack } from "@/lib/f1/circuits";
+import { getRaceSession, getLiveTiming } from "@/lib/f1/openf1";
 import { teamColor, teamName } from "@/lib/f1/teams";
 import { flag } from "@/lib/f1/flags";
 import { SectionHeading } from "@/components/section-heading";
 import { Countdown } from "@/components/countdown";
 import { TrackMap } from "@/components/track-map";
+import { SessionCharts } from "@/components/session-charts";
 
 export const revalidate = 3600;
 
@@ -53,6 +55,17 @@ export default async function RacePage({
     meta.Circuit.Location.lat,
     meta.Circuit.Location.long
   );
+
+  // OpenF1 telemetry (pace / position / stints) for races from 2023 on.
+  const ofs =
+    results.length > 0
+      ? await getRaceSession(
+          meta.season,
+          meta.Circuit.Location.locality,
+          meta.Circuit.Location.country
+        )
+      : null;
+  const ofsOrder = ofs ? await getLiveTiming(ofs) : [];
   const sessions = [
     fmtSession("Practice 1", meta.FirstPractice),
     fmtSession("Practice 2", meta.SecondPractice),
@@ -205,6 +218,10 @@ export default async function RacePage({
             ))}
           </div>
         </div>
+      )}
+
+      {ofs && ofsOrder.length > 0 && (
+        <SessionCharts session={ofs} order={ofsOrder} />
       )}
     </div>
   );

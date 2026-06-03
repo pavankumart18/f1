@@ -9,9 +9,17 @@ export interface OpenF1Session {
   session_type: string;
   country_name: string;
   circuit_short_name: string;
+  location?: string;
   date_start: string;
   date_end: string;
   year: number;
+}
+
+export interface StintSeg {
+  compound: string;
+  start: number;
+  end: number;
+  age: number;
 }
 
 interface DriverRow {
@@ -230,6 +238,69 @@ export async function getSessionLaps(
     m.set(r.driver_number, arr);
   }
   return m;
+}
+
+// Tyre stints per driver_number for the strategy chart.
+export async function getSessionStints(
+  sessionKey: number
+): Promise<Map<number, StintSeg[]>> {
+  const rows = await safe(
+    j<
+      {
+        driver_number: number;
+        compound: string;
+        lap_start: number;
+        lap_end: number;
+        tyre_age_at_start: number;
+      }[]
+    >(`stints?session_key=${sessionKey}`, 30),
+    []
+  );
+  const m = new Map<number, StintSeg[]>();
+  for (const r of rows) {
+    if (!r.compound) continue;
+    const arr = m.get(r.driver_number) ?? [];
+    arr.push({
+      compound: r.compound,
+      start: r.lap_start,
+      end: r.lap_end,
+      age: r.tyre_age_at_start,
+    });
+    m.set(r.driver_number, arr);
+  }
+  for (const arr of m.values()) arr.sort((a, b) => a.start - b.start);
+  return m;
+}
+
+const normLoc = (s?: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+// Map a Jolpica race (year + locality + country) to its OpenF1 session.
+// OpenF1 only covers 2023+. Matches on city/circuit first (handles countries
+// with multiple races), then falls back to a unique country match.
+export async function getRaceSession(
+  year: string | number,
+  locality: string,
+  country: string
+): Promise<OpenF1Session | null> {
+  if (Number(year) < 2023) return null;
+  const sessions = await safe(
+    j<OpenF1Session[]>(`sessions?year=${year}&session_name=Race`, 24 * 3600),
+    []
+  );
+  if (!sessions.length) return null;
+  const loc = normLoc(locality);
+  const ctry = normLoc(country);
+  const exact = sessions.find(
+    (s) => normLoc(s.location) === loc || normLoc(s.circuit_short_name) === loc
+  );
+  if (exact) return exact;
+  const partial = sessions.find((s) => {
+    const L = normLoc(s.location);
+    return L && (L.includes(loc) || loc.includes(L));
+  });
+  if (partial) return partial;
+  const byCountry = sessions.filter((s) => normLoc(s.country_name) === ctry);
+  return byCountry.length === 1 ? byCountry[0] : null;
 }
 
 export interface PosByLap {
