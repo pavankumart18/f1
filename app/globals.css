@@ -1,26 +1,132 @@
 @import "tailwindcss";
 
+/* Carbon (dark) skin toggled via the `.dark` class on <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------------------
+   BROADSHEET — the default "newspaper" skin: warm paper, black ink, F1 red
+--------------------------------------------------------------------------- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --paper: #f4f1ea;
+  --paper-raised: #fbf9f4;
+  --panel: #ffffff;
+  --ink: #16130f;
+  --ink-soft: #5f594f;
+  --ink-faint: #938c7f;
+  --rule: #ddd6c8;
+  --rule-strong: #16130f;
+  --accent: #e10600;
+  --accent-ink: #ffffff;
+  --positive: #1f7a4d;
+  --negative: #c0392b;
+}
+
+/* ---------------------------------------------------------------------------
+   CARBON — the dark "pit wall" skin
+--------------------------------------------------------------------------- */
+.dark {
+  --paper: #0a0a0b;
+  --paper-raised: #121214;
+  --panel: #141416;
+  --ink: #ece9e2;
+  --ink-soft: #9b968d;
+  --ink-faint: #66625b;
+  --rule: #26262a;
+  --rule-strong: #3a3a40;
+  --accent: #ff1e00;
+  --accent-ink: #ffffff;
+  --positive: #3ecf8e;
+  --negative: #ff5c5c;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-panel: var(--panel);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--rule);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "kern", "liga";
 }
+
+/* Editorial helpers ------------------------------------------------------- */
+.font-display {
+  font-family: var(--font-display), Georgia, "Times New Roman", serif;
+}
+
+.kicker {
+  font-family: var(--font-mono), monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.6875rem;
+  color: var(--ink-soft);
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Marquee ticker ---------------------------------------------------------- */
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-ticker {
+  animation: ticker 40s linear infinite;
+}
+.animate-ticker:hover {
+  animation-play-state: paused;
+}
+
+/* Subtle reveal ----------------------------------------------------------- */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-rise {
+  animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+.live-dot {
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Thin scrollbar for the calendar strip */
+.thin-scroll::-webkit-scrollbar { height: 6px; }
+.thin-scroll::-webkit-scrollbar-thumb { background: var(--rule-strong); border-radius: 999px; }
+.thin-scroll::-webkit-scrollbar-track { background: transparent; }
